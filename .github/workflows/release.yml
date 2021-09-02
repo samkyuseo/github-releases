@@ -11,9 +11,14 @@ on:
 
 # Actions done when event is triggered
 jobs:
+  # Job to build the app
   build:
     # The OS of the device that this is run on
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
+
+    strategy: 
+      matrix:
+          os: [ ubuntu-latest, windows-latest, macOS-latest ]
     # Use a build matrix to run on multiple versions of node 
     strategy:
       matrix:
@@ -31,3 +36,8 @@ jobs:
     # TLDR: npm i with bells and whistles 
     - run: npm ci
     - run: npm run build --if-present
+
+  # Job to publish the actual application 
+  publish: 
+    # Prevent it from running jobs in parallel. Publish is dependent on build 
+    needs: build 
