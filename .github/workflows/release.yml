@@ -40,7 +40,7 @@ jobs:
   # Job to release the actual application 
   release-project:
     name: Release static site to github releases 
-    needs: build 
+    needs: build-project
     runs-on: windows-latest
     steps: 
       - name: Download site content
