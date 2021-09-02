@@ -51,6 +51,9 @@ jobs:
           filename: site.zip
       - name: Get package version from package.json
         uses: nyaa8/package-version@v1
+        with:
+          path: 'package.json' # Optional
+          follow-symlinks: 'false' # Optional
       - name: Create github release 
         id: create-new-release
         uses: actions/create-release@v1
