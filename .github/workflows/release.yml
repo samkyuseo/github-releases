@@ -16,7 +16,6 @@ jobs:
           node-version: [ 14.x ] # add more node versions to build
     
     name: Build static site and upload the artifacts 
-    needs: check-tag
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
