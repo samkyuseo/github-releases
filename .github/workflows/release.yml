@@ -24,9 +24,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-      
-    # Removes node_modules and get a fresh install of depedencies from package-lock.json + verifies its version with package.json
-    - name: Install dependencies
+    - name: Fresh install of node dependencies
       run: npm ci
     - name: Build project
       run: npm run build --if-present
@@ -51,14 +49,17 @@ jobs:
         uses: thedoctor0/zip-release/@master
         with:
           filename: site.zip
+      - name: get-npm-version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@master
       - name: Create github release 
         id: create-new-release
         uses: actions/create-release@v1
         env: 
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with: 
-          tag_name: v${{ github.event.release.tag_name }}
-          release_name: Release V${{ github.event.release.tag_name }}
+          tag_name: v${{ steps.package-version.outputs.current-version }}
+          release_name: Release V${{ steps.package-version.outputs.current-version }}
       - name: Upload asset to github release 
         uses: actions/upload-release-asset@v1
         env: 
@@ -66,6 +67,6 @@ jobs:
         with: 
           upload_url: ${{ steps.create-new-release.outputs.upload_url }}
           asset_path: ./site.zip
-          asset_name: site-v${{ github.event.release.tag_name }}.zip
+          asset_name: site-v${{ steps.package-version.outputs.current-version }}.zip
           asset_content_type: application/zip
       
