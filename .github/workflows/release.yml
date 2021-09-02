@@ -8,64 +8,77 @@ on:
 
 # Actions done when event is triggered
 jobs:
-  # Job to build the app
-  build-project:
-    strategy: 
-      matrix:
-          os: [ windows-latest ] # add more operating systems here, comma sepearated
-          node-version: [ 14.x ] # add more node versions to build
-    
-    # The OS of VM this code will be spun up on
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-      
-    # Removes node_modules and get a fresh install of depedencies from package-lock.json + verifies its version with package.json
-    - name: Install dependencies
-      run: npm ci
-    - name: Build project
-      run: npm run build --if-present
-    - name: Upload static website
-      uses: actions/upload-artifact@v2
-      with: 
-        name: static-site
-        path: build/
-        if-no-files-found: error
-
-  # Job to release the actual application 
-  release-project:
-    name: Release static site to github releases 
-    needs: build-project
+  # Check tag exists on commit 
+  check-tag: 
+    name: Check if tag exists for version number 
     runs-on: windows-latest
     steps: 
-      - name: Download site content
-        uses: actions/download-artifact@v2
-        with: 
-          name: static-site
-      - name: Zip content 
-        uses: thedoctor0/zip-release/@master
+      - name: Get tag of current commit 
+        uses: olegtarasov/get-tag@v2.1
+        id: tag-name
+      - name: Some other step # Output usage example
         with:
-          filename: site.zip
-      - name: Create github release 
-        id: create-new-release
-        uses: actions/create-release@v1
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with: 
-          tag_name: v${{ github.run_number }}
-          release_name: Release V${{ github.run_number }}
-      - name: Upload asset to github release 
-        uses: actions/upload-release-asset@v1
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with: 
-          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
-          asset_path: ./site.zip
-          asset_name: site-v${{ github.run_number }}.zip
-          asset_content_type: application/zip
+          tagname: ${{ steps.tagName.outputs.tag }}
+
+  # # Job to build the app
+  # build-project:
+  #   strategy: 
+  #     matrix:
+  #         os: [ windows-latest ] # add more operating systems here, comma sepearated
+  #         node-version: [ 14.x ] # add more node versions to build
+    
+  #   name: Build static site and upload the artifacts 
+  #   needs: check-tag
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - name: Use Node.js ${{ matrix.node-version }}
+  #     uses: actions/setup-node@v2
+  #     with:
+  #       node-version: ${{ matrix.node-version }}
+  #       cache: 'npm'
+      
+  #   # Removes node_modules and get a fresh install of depedencies from package-lock.json + verifies its version with package.json
+  #   - name: Install dependencies
+  #     run: npm ci
+  #   - name: Build project
+  #     run: npm run build --if-present
+  #   - name: Upload static website
+  #     uses: actions/upload-artifact@v2
+  #     with: 
+  #       name: static-site
+  #       path: build/
+  #       if-no-files-found: error
+
+  # # Job to release the actual application 
+  # release-project:
+  #   name: Release static site to github releases 
+  #   needs: build-project
+  #   runs-on: windows-latest
+  #   steps: 
+  #     - name: Download site content
+  #       uses: actions/download-artifact@v2
+  #       with: 
+  #         name: static-site
+  #     - name: Zip content 
+  #       uses: thedoctor0/zip-release/@master
+  #       with:
+  #         filename: site.zip
+  #     - name: Create github release 
+  #       id: create-new-release
+  #       uses: actions/create-release@v1
+  #       env: 
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with: 
+  #         tag_name: v${{ github.run_number }}
+  #         release_name: Release V${{ github.run_number }}
+  #     - name: Upload asset to github release 
+  #       uses: actions/upload-release-asset@v1
+  #       env: 
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with: 
+  #         upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+  #         asset_path: ./site.zip
+  #         asset_name: site-v${{ github.run_number }}.zip
+  #         asset_content_type: application/zip
       
