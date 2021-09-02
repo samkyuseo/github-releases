@@ -37,7 +37,7 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
 
-  # Job to publish the actual application 
-  publish: 
-    # Prevent it from running jobs in parallel. Publish is dependent on build 
-    needs: build 
+  # # Job to publish the actual application 
+  # publish: 
+  #   # Prevent it from running jobs in parallel. Publish is dependent on build 
+  #   needs: build 
