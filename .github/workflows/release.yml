@@ -18,22 +18,25 @@ jobs:
     name: Build static site and upload the artifacts 
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - name: Fresh install of node dependencies
-      run: npm ci
-    - name: Build project
-      run: npm run build --if-present
-    - name: Upload static website
-      uses: actions/upload-artifact@v2
-      with: 
-        name: static-site
-        path: build/
-        if-no-files-found: error
+      - name: Fetch repository
+        uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Fresh install of node dependencies
+        run: npm ci
+      - name: Build project
+        run: npm run build --if-present
+      - name: Upload static website
+        uses: actions/upload-artifact@v2
+        with: 
+          name: static-site
+          path: build/
+          if-no-files-found: error
 
   # Job to release the actual application 
   release-project:
@@ -41,6 +44,10 @@ jobs:
     needs: build-project
     runs-on: ubuntu-latest
     steps: 
+      - name: Fetch repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Download site content
         uses: actions/download-artifact@v2
         with: 
