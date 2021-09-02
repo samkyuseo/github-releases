@@ -1,0 +1,33 @@
+# This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+# Name of workflow (optional)
+name: Release new version workflow
+
+# Events that trigger this workflow: Only release when merged or pushed to prod
+on:
+  push:
+    branches: [ prod ]
+
+# Actions done when event is triggered
+jobs:
+  build:
+    # The OS of the device that this is run on
+    runs-on: ubuntu-latest
+    # Use a build matrix to run on multiple versions of node 
+    strategy:
+      matrix:
+        node-version: [12.x, 14.x, 16.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    # Removes node_modules and get a fresh install of depedencies from package-lock.json + verifies its version with package.json
+    # TLDR: npm i with bells and whistles 
+    - run: npm ci
+    - run: npm run build --if-present
