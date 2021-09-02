@@ -1,8 +1,5 @@
-# This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
 # Name of workflow (optional)
-name: Release new version workflow
+name: Build and release react.js application
 
 # Events that trigger this workflow: Only release when merged or pushed to prod
 on:
@@ -12,20 +9,14 @@ on:
 # Actions done when event is triggered
 jobs:
   # Job to build the app
-  build:
-    # The OS of the device that this is run on
-    runs-on: ${{matrix.os}}
-
+  build-project:
     strategy: 
       matrix:
-          os: [ ubuntu-latest, windows-latest, macOS-latest ]
-          node-version: [12.x, 14.x, 16.x]
-    # Use a build matrix to run on multiple versions of node 
-    # strategy:
-    #   matrix:
-        # node-version: [12.x, 14.x, 16.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
+          os: [ windows-latest ] # add more operating systems here, comma sepearated
+          node-version: [ 14.x ] # add more node versions to build
+    
+    # The OS of VM this code will be spun up on
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -33,12 +24,48 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+      
     # Removes node_modules and get a fresh install of depedencies from package-lock.json + verifies its version with package.json
-    # TLDR: npm i with bells and whistles 
-    - run: npm ci
-    - run: npm run build --if-present
+    - name: Install dependencies
+      run: npm ci
+    - name: Build project
+      run: npm run build --if-present
+    - name: Upload static website
+      uses: actions/upload-artifact@v2
+      with: 
+        name: static-site
+        path: build/
+        if-no-files-found: error
 
-  # # Job to publish the actual application 
-  # publish: 
-  #   # Prevent it from running jobs in parallel. Publish is dependent on build 
-  #   needs: build 
+  # Job to release the actual application 
+  release-project:
+    name: Release static site to github releases 
+    needs: build 
+    runs-on: windows-latest
+    steps: 
+      - name: Download site content
+        uses: actions/download-artifact@v2
+        with: 
+          name: static-site
+      - name: Zip content 
+        uses: thedoctor0/zip-release/@master
+        with:
+          filename: site.zip
+      - name: Create github release 
+        id: create-new-release
+        uses: actions/create-release@v1
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with: 
+          tag_name: v${{ github.run_number }}
+          release_name: Release V${{ github.run_number }}
+      - name: Upload asset to github release 
+        uses: actions/upload-release-asset@v1
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with: 
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+          asset_path: ./site.zip
+          asset_name: site-v${{ github.run_number }}.zip
+          asset_content_type: application/zip
+      
